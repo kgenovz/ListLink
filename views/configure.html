@@ -174,6 +174,55 @@
             background: #1a1a1a;
         }
 
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .button-secondary {
+            background: #2a2a2a;
+            color: #fff;
+            padding: 14px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            display: inline-block;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: 2px solid #3a3a3a;
+            cursor: pointer;
+            font-size: 1rem;
+            flex: 1;
+            text-align: center;
+        }
+
+        .button-secondary:hover {
+            background: #3a3a3a;
+            border-color: #4a4a4a;
+            transform: translateY(-2px);
+        }
+
+        .button-primary {
+            background: #00d4ff;
+            color: #0f0f0f;
+            padding: 14px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            display: inline-block;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            flex: 1;
+            text-align: center;
+        }
+
+        .button-primary:hover {
+            background: #00b8e6;
+            transform: translateY(-2px);
+        }
+
         .hidden {
             display: none;
         }
@@ -212,8 +261,12 @@
 
             <div id="result" class="hidden">
                 <h3>🎉 Your Add-on URL is Ready!</h3>
-                <p>Copy this URL and add it to Stremio:</p>
+                <p>Copy the URL or install directly to Stremio:</p>
                 <input type="text" id="addonUrl" readonly onclick="this.select()">
+                <div class="button-group">
+                    <button onclick="copyToClipboard()" class="button-secondary">Copy URL</button>
+                    <a id="installLink" href="#" class="button-primary">Install to Stremio</a>
+                </div>
             </div>
         </div>
     </div>
@@ -264,8 +317,34 @@
             };
             const encodedConfig = btoa(JSON.stringify(config));
             const addonUrl = `{{BASE_URL}}/${encodedConfig}/manifest.json`;
+            const stremioUrl = addonUrl.replace('https://', 'stremio://').replace('http://', 'stremio://');
+
             document.getElementById('addonUrl').value = addonUrl;
+            document.getElementById('installLink').href = stremioUrl;
             document.getElementById('result').classList.remove('hidden');
+        }
+
+        function copyToClipboard() {
+            const addonUrl = document.getElementById('addonUrl');
+            addonUrl.select();
+            addonUrl.setSelectionRange(0, 99999); // For mobile devices
+
+            navigator.clipboard.writeText(addonUrl.value).then(() => {
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                button.style.background = '#00d4ff';
+                button.style.color = '#0f0f0f';
+
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = '#2a2a2a';
+                    button.style.color = '#fff';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy URL. Please copy manually.');
+            });
         }
     </script>
 </body>
