@@ -13,10 +13,10 @@ const TRAKT_API_BASE = 'https://api.trakt.tv';
 
 // Manifest
 const createManifest = (username = null) => ({
-    id: 'community.trakt-adder',
+    id: 'community.listlink',
     version: '1.0.0',
-    name: username ? `Trakt List Adder (${username})` : 'Trakt List Adder',
-    description: 'Add watched content to your Trakt.tv lists',
+    name: username ? `ListLink (${username})` : 'ListLink',
+    description: 'Add watched content to your Trakt.tv and MDBList lists',
     logo: `${BASE_URL}/logo.png`,
     resources: ['stream'],
     types: ['movie', 'series'],
@@ -92,7 +92,7 @@ const getConfigurePage = () => `
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Configure Trakt Add-on</title>
+    <title>Configure ListLink</title>
     <style>
         body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
         .step { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
@@ -102,7 +102,7 @@ const getConfigurePage = () => `
     </style>
 </head>
 <body>
-    <h1>Configure Trakt Add-on</h1>
+    <h1>Configure ListLink</h1>
     <div class="step">
         <h2>Step 1: Authenticate with Trakt</h2>
         <p>Click the button below to authenticate with your Trakt.tv account:</p>
@@ -322,7 +322,7 @@ app.get('/:config/add/:type/:id/:listSlug', async (req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-    console.log(`Trakt Add-on server running on ${BASE_URL}`);
+    console.log(`ListLink server running on ${BASE_URL}`);
     console.log(`Manifest URL: ${BASE_URL}/manifest.json`);
     console.log(`Configuration URL: ${BASE_URL}/configure`);
 });
