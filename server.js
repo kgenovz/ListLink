@@ -24,7 +24,7 @@ const createManifest = (username = null) => ({
     catalogs: [],
     behaviorHints: {
         configurable: true,
-        configurationRequired: true
+        configurationRequired: !username
     }
 });
 
