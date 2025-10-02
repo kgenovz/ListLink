@@ -291,7 +291,7 @@ app.get('/:config/stream/:type/:id.json', (req, res) => {
     try {
         const streams = config.lists.map(listSlug => ({
             title: `Add to ${listSlug === 'watchlist' ? 'Watchlist' : listSlug}`,
-            url: `${BASE_URL}/${req.params.config}/add/${type}/${id}/${listSlug}`
+            externalUrl: `${BASE_URL}/${req.params.config}/add/${type}/${id}/${listSlug}`
         }));
 
         res.json({ streams });
