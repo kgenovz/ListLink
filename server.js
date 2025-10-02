@@ -12,6 +12,7 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 const TRAKT_CLIENT_ID = process.env.TRAKT_CLIENT_ID;
 const TRAKT_CLIENT_SECRET = process.env.TRAKT_CLIENT_SECRET;
 const TRAKT_API_BASE = 'https://api.trakt.tv';
+const MDBLIST_API_BASE = 'https://api.mdblist.com';
 
 // Manifest
 const createManifest = (username = null) => ({
@@ -86,6 +87,39 @@ const addItemToList = async (accessToken, listSlug, type, imdbId) => {
     const response = await axios.post(endpoint, payload, {
         headers: createTraktHeaders(accessToken)
     });
+    return response.data;
+};
+
+// MDBList API Functions
+const getMDBListUserLists = async (apiKey) => {
+    const response = await axios.get(`${MDBLIST_API_BASE}/lists/user?apikey=${apiKey}`);
+    return response.data;
+};
+
+const addItemToMDBListWatchlist = async (apiKey, imdbId, mediatype) => {
+    const response = await axios.post(
+        `${MDBLIST_API_BASE}/watchlist/items/action?apikey=${apiKey}`,
+        {
+            action: 'add',
+            items: [{ imdb_id: imdbId, mediatype }]
+        },
+        {
+            headers: { 'Content-Type': 'application/json' }
+        }
+    );
+    return response.data;
+};
+
+const addItemToMDBList = async (apiKey, listId, imdbId, mediatype) => {
+    const response = await axios.post(
+        `${MDBLIST_API_BASE}/lists/${listId}/items?apikey=${apiKey}`,
+        {
+            items: [{ imdb_id: imdbId, mediatype }]
+        },
+        {
+            headers: { 'Content-Type': 'application/json' }
+        }
+    );
     return response.data;
 };
 
@@ -174,6 +208,21 @@ app.get('/api/user/lists', async (req, res) => {
     }
 });
 
+app.get('/api/user/mdblist-lists', async (req, res) => {
+    const apiKey = req.query.apikey;
+    if (!apiKey) {
+        return res.status(401).json({ error: 'No API key provided' });
+    }
+
+    try {
+        const lists = await getMDBListUserLists(apiKey);
+        res.json(lists);
+    } catch (error) {
+        console.error('Error fetching MDBList lists:', error.response?.data || error.message);
+        res.status(500).json({ error: 'Failed to fetch MDBList lists' });
+    }
+});
+
 // Stream Routes
 app.get('/:config/stream/:type/:id.json', (req, res) => {
     const config = decodeConfig(req.params.config);
@@ -184,10 +233,19 @@ app.get('/:config/stream/:type/:id.json', (req, res) => {
     const { type, id } = req.params;
 
     try {
-        const streams = config.lists.map(listSlug => ({
-            title: `Add to ${listSlug === 'watchlist' ? 'Watchlist' : listSlug}`,
-            externalUrl: `${BASE_URL}/${req.params.config}/add/${type}/${id}/${listSlug}`
-        }));
+        const streams = config.lists.map(list => {
+            const listIdentifier = typeof list === 'string' ? list : list.id;
+            const listName = typeof list === 'string'
+                ? (list === 'watchlist' ? 'Watchlist' : list)
+                : list.name;
+            const source = typeof list === 'string' ? 'trakt' : list.source;
+            const prefix = source === 'mdblist' ? '[MDBList] ' : '';
+
+            return {
+                title: `Add to ${prefix}${listName}`,
+                externalUrl: `${BASE_URL}/${req.params.config}/add/${type}/${id}/${listIdentifier}?source=${source}`
+            };
+        });
 
         res.json({ streams });
     } catch (error) {
@@ -203,11 +261,21 @@ app.get('/:config/add/:type/:id/:listSlug', async (req, res) => {
     }
 
     const { type, id, listSlug } = req.params;
+    const source = req.query.source || 'trakt';
     // Extract just the IMDB ID (for series, id format is tt1234567:season:episode)
     const imdbId = id.split(':')[0];
 
     try {
-        await addItemToList(config.accessToken, listSlug, type, imdbId);
+        if (source === 'mdblist') {
+            const mediatype = type === 'movie' ? 'movie' : 'show';
+            if (listSlug === 'watchlist') {
+                await addItemToMDBListWatchlist(config.mdblistApiKey, imdbId, mediatype);
+            } else {
+                await addItemToMDBList(config.mdblistApiKey, listSlug, imdbId, mediatype);
+            }
+        } else {
+            await addItemToList(config.accessToken, listSlug, type, imdbId);
+        }
         res.send(getSuccessPage(listSlug));
     } catch (error) {
         console.error('Error adding to list:', error.response?.data || error.message);

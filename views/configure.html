@@ -246,14 +246,21 @@
         </div>
 
         <div class="card">
-            <h2><span class="step-number">1</span> Authenticate with Trakt</h2>
+            <h2><span class="step-number">1</span> Authenticate with Trakt (Optional)</h2>
             <p>Connect your Trakt.tv account to access your lists and watchlist.</p>
             <a href="/auth/trakt" class="button">Connect to Trakt</a>
         </div>
 
+        <div class="card">
+            <h2><span class="step-number">2</span> Connect to MDBList (Optional)</h2>
+            <p>Enter your MDBList API key to access your lists and watchlist.</p>
+            <input type="text" id="mdblistApiKey" placeholder="Enter your MDBList API key" style="width: 100%; padding: 15px; border-radius: 8px; border: 2px solid #2a2a2a; background: #151515; color: #fff; font-size: 0.9rem; margin-bottom: 15px; outline: none;">
+            <button onclick="connectMDBList()" class="button">Connect to MDBList</button>
+        </div>
+
         <div id="authenticated" class="hidden">
             <div class="card">
-                <h2><span class="step-number">2</span> Select Lists</h2>
+                <h2><span class="step-number">3</span> Select Lists</h2>
                 <p>Choose which lists you want to add content to from Stremio.</p>
                 <div id="lists" class="list-container"></div>
                 <button onclick="generateAddonUrl()" class="button">Generate Add-on URL</button>
@@ -275,44 +282,104 @@
         if (urlParams.get('access_token')) {
             handleAuthSuccess(urlParams.get('access_token'), urlParams.get('username'));
         }
+
         function handleAuthSuccess(accessToken, username) {
             document.getElementById('authenticated').classList.remove('hidden');
             window.accessToken = accessToken;
             window.username = username;
             loadUserLists();
         }
+
+        async function connectMDBList() {
+            const apiKey = document.getElementById('mdblistApiKey').value.trim();
+            if (!apiKey) {
+                alert('Please enter your MDBList API key');
+                return;
+            }
+            window.mdblistApiKey = apiKey;
+            document.getElementById('authenticated').classList.remove('hidden');
+            await loadMDBListLists();
+        }
+
         async function loadUserLists() {
+            if (!window.accessToken) return;
             try {
                 const response = await fetch('/api/user/lists', {
                     headers: { 'Authorization': 'Bearer ' + window.accessToken }
                 });
                 const lists = await response.json();
-                displayLists(lists);
+                displayTraktLists(lists);
             } catch (error) {
-                console.error('Error loading lists:', error);
+                console.error('Error loading Trakt lists:', error);
             }
         }
-        function displayLists(lists) {
+
+        async function loadMDBListLists() {
+            if (!window.mdblistApiKey) return;
+            try {
+                const response = await fetch('/api/user/mdblist-lists?apikey=' + window.mdblistApiKey);
+                const lists = await response.json();
+                displayMDBListLists(lists);
+            } catch (error) {
+                console.error('Error loading MDBList lists:', error);
+            }
+        }
+
+        function displayTraktLists(lists) {
             const listsContainer = document.getElementById('lists');
-            listsContainer.innerHTML = `
+            let html = listsContainer.innerHTML;
+
+            html += `
                 <div class="list-item">
-                    <label><input type="checkbox" value="watchlist" checked> Watchlist</label>
+                    <label><input type="checkbox" value="watchlist" data-source="trakt" checked> [Trakt] Watchlist</label>
                 </div>
             `;
             lists.forEach(list => {
-                listsContainer.innerHTML += `
+                html += `
                     <div class="list-item">
-                        <label><input type="checkbox" value="${list.ids.slug}"> ${list.name}</label>
+                        <label><input type="checkbox" value="${list.ids.slug}" data-source="trakt" data-name="${list.name}"> [Trakt] ${list.name}</label>
                     </div>
                 `;
             });
+            listsContainer.innerHTML = html;
+        }
+
+        function displayMDBListLists(lists) {
+            const listsContainer = document.getElementById('lists');
+            let html = listsContainer.innerHTML;
+
+            html += `
+                <div class="list-item">
+                    <label><input type="checkbox" value="watchlist" data-source="mdblist" checked> [MDBList] Watchlist</label>
+                </div>
+            `;
+            lists.forEach(list => {
+                html += `
+                    <div class="list-item">
+                        <label><input type="checkbox" value="${list.id}" data-source="mdblist" data-name="${list.name}"> [MDBList] ${list.name}</label>
+                    </div>
+                `;
+            });
+            listsContainer.innerHTML = html;
         }
         function generateAddonUrl() {
-            const selectedLists = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
-                .map(cb => cb.value);
+            const selectedCheckboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+            const selectedLists = Array.from(selectedCheckboxes).map(cb => {
+                const source = cb.getAttribute('data-source');
+                const value = cb.value;
+                const name = cb.getAttribute('data-name') || (value === 'watchlist' ? 'Watchlist' : value);
+
+                return {
+                    source: source,
+                    id: value,
+                    name: name
+                };
+            });
+
             const config = {
                 accessToken: window.accessToken,
                 username: window.username,
+                mdblistApiKey: window.mdblistApiKey,
                 lists: selectedLists
             };
             const encodedConfig = btoa(JSON.stringify(config));
