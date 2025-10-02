@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const session = require('express-session');
 require('dotenv').config();
 
 // Import routes
@@ -18,6 +19,18 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
+
+// Session middleware for OAuth state validation
+app.use(session({
+    secret: process.env.SESSION_SECRET || require('crypto').randomBytes(32).toString('hex'),
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        maxAge: 10 * 60 * 1000 // 10 minutes
+    }
+}));
 
 // Register routes
 app.use(setupManifestRoutes(BASE_URL));

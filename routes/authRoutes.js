@@ -12,12 +12,22 @@ const setupAuthRoutes = (baseUrl) => {
 
     router.get('/auth/trakt', (req, res) => {
         const state = crypto.randomBytes(16).toString('hex');
+        req.session.oauthState = state;
         const authUrl = getAuthUrl(TRAKT_CLIENT_ID, `${baseUrl}/auth/trakt/callback`, state);
         res.redirect(authUrl);
     });
 
     router.get('/auth/trakt/callback', async (req, res) => {
-        const { code } = req.query;
+        const { code, state } = req.query;
+
+        // Validate state parameter to prevent CSRF attacks
+        if (!state || !req.session.oauthState || state !== req.session.oauthState) {
+            delete req.session.oauthState;
+            return res.status(403).send('Invalid state parameter - potential CSRF attack detected');
+        }
+
+        // Clear the state from session after validation
+        delete req.session.oauthState;
 
         if (!code) {
             return res.status(400).send('Authorization failed');
