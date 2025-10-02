@@ -326,25 +326,44 @@
 
         function copyToClipboard() {
             const addonUrl = document.getElementById('addonUrl');
+            const button = event.target;
+            const originalText = button.textContent;
+
             addonUrl.select();
             addonUrl.setSelectionRange(0, 99999); // For mobile devices
 
-            navigator.clipboard.writeText(addonUrl.value).then(() => {
-                const button = event.target;
-                const originalText = button.textContent;
-                button.textContent = 'Copied!';
-                button.style.background = '#00d4ff';
-                button.style.color = '#0f0f0f';
+            // Try modern clipboard API first
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(addonUrl.value).then(() => {
+                    showCopySuccess(button, originalText);
+                }).catch(err => {
+                    fallbackCopy(addonUrl, button, originalText);
+                });
+            } else {
+                fallbackCopy(addonUrl, button, originalText);
+            }
+        }
 
-                setTimeout(() => {
-                    button.textContent = originalText;
-                    button.style.background = '#2a2a2a';
-                    button.style.color = '#fff';
-                }, 2000);
-            }).catch(err => {
+        function fallbackCopy(addonUrl, button, originalText) {
+            try {
+                document.execCommand('copy');
+                showCopySuccess(button, originalText);
+            } catch (err) {
                 console.error('Failed to copy:', err);
                 alert('Failed to copy URL. Please copy manually.');
-            });
+            }
+        }
+
+        function showCopySuccess(button, originalText) {
+            button.textContent = 'Copied!';
+            button.style.background = '#00d4ff';
+            button.style.color = '#0f0f0f';
+
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.style.background = '#2a2a2a';
+                button.style.color = '#fff';
+            }, 2000);
         }
     </script>
 </body>
