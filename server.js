@@ -308,7 +308,8 @@ app.get('/:config/add/:type/:id/:listSlug', async (req, res) => {
     }
 
     const { type, id, listSlug } = req.params;
-    const imdbId = id; // Keep the full IMDB ID including 'tt' prefix
+    // Extract just the IMDB ID (for series, id format is tt1234567:season:episode)
+    const imdbId = id.split(':')[0];
 
     try {
         await addItemToList(config.accessToken, listSlug, type, imdbId);
