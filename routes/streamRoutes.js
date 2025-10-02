@@ -59,10 +59,10 @@ const setupStreamRoutes = (baseUrl) => {
             } else {
                 await addItemToList(config.accessToken, listSlug, type, imdbId);
             }
-            res.send(getSuccessPage(listSlug));
+            res.send(getSuccessPage(listSlug, type, id));
         } catch (error) {
             console.error('Error adding to list:', error.response?.data || error.message);
-            res.status(500).send(getErrorPage());
+            res.status(500).send(getErrorPage(type, id));
         }
     });
 
