@@ -104,7 +104,7 @@
         <div class="success">Item added to {{LIST_SLUG}}</div>
         <p>You can close this window and return to Stremio.</p>
         <div class="button-container">
-            <a href="{{STREMIO_DEEPLINK}}" class="btn btn-primary">Back to Stremio</a>
+            <a href="{{STREMIO_DEEPLINK}}" class="btn btn-primary" onclick="setTimeout(() => window.close(), 500); return true;">Back to Stremio</a>
             <button onclick="window.close()" class="btn btn-secondary">Close Window</button>
         </div>
     </div>

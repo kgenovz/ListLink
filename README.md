@@ -14,6 +14,21 @@ A Stremio add-on that allows you to automatically add watched content to your Tr
 
 ## Setup
 
+### Important: HTTPS Required
+
+**This add-on requires HTTPS to work with Trakt.tv OAuth.** You cannot run it on `http://localhost` for production use. You have two options:
+
+1. **Deploy to a hosting service** (e.g., Heroku, Railway, Render, DigitalOcean)
+2. **Use ngrok for local development**:
+   ```bash
+   # Install ngrok: https://ngrok.com/
+   # Start your server first, then in another terminal:
+   ngrok http 7000
+   # Use the HTTPS URL provided by ngrok as your BASE_URL
+   ```
+
+### Installation Steps
+
 1. **Install Dependencies**:
    ```bash
    npm install
@@ -24,7 +39,7 @@ A Stremio add-on that allows you to automatically add watched content to your Tr
    **For Trakt.tv:**
    - Go to [Trakt API Apps](https://trakt.tv/oauth/applications)
    - Create a new application
-   - Set redirect URI to: `http://localhost:7000/auth/trakt/callback`
+   - Set redirect URI to: `https://your-domain.com/auth/trakt/callback` (use your ngrok or hosted URL)
    - Note your Client ID and Client Secret
 
    **For MDBList:**
@@ -39,7 +54,7 @@ A Stremio add-on that allows you to automatically add watched content to your Tr
    ```
    TRAKT_CLIENT_ID=your_client_id
    TRAKT_CLIENT_SECRET=your_client_secret
-   BASE_URL=http://localhost:7000
+   BASE_URL=https://your-domain.com
    PORT=7000
    ```
    Note: MDBList API key is entered during configuration, not in .env
@@ -54,7 +69,7 @@ A Stremio add-on that allows you to automatically add watched content to your Tr
 ## Usage
 
 1. **Configure the Add-on**:
-   - Visit `http://localhost:7000/configure`
+   - Visit `https://your-domain.com/configure` (use your ngrok or hosted URL)
    - **Connect to Trakt** (optional): Click "Connect to Trakt" and authorize
    - **Connect to MDBList** (optional): Enter your MDBList API key
    - Select which lists you want to use from both services
