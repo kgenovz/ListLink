@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Configure ListLink</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f0f0f;
+            min-height: 100vh;
+            padding: 20px;
+            color: #e4e4e4;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 40px 0;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            color: #888;
+            font-size: 1.1rem;
+        }
+
+        .card {
+            background: #1a1a1a;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 25px;
+            border: 1px solid #2a2a2a;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 35px;
+            height: 35px;
+            background: #00d4ff;
+            color: #0f0f0f;
+            border-radius: 50%;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        .card p {
+            color: #999;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .button {
+            background: #00d4ff;
+            color: #0f0f0f;
+            padding: 14px 30px;
+            text-decoration: none;
+            border-radius: 8px;
+            display: inline-block;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .button:hover {
+            background: #00b8e6;
+            transform: translateY(-2px);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        .list-container {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .list-item {
+            background: #151515;
+            border: 2px solid #2a2a2a;
+            border-radius: 10px;
+            padding: 15px 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .list-item:hover {
+            background: #1f1f1f;
+            border-color: #00d4ff;
+        }
+
+        .list-item label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 1rem;
+            color: #e4e4e4;
+        }
+
+        .list-item input[type="checkbox"] {
+            width: 22px;
+            height: 22px;
+            margin-right: 15px;
+            cursor: pointer;
+            accent-color: #00d4ff;
+        }
+
+        #result {
+            background: #1a1a1a;
+            border: 2px solid #00d4ff;
+            padding: 25px;
+            border-radius: 12px;
+            margin-top: 25px;
+        }
+
+        #result h3 {
+            color: #00d4ff;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        #result p {
+            color: #999;
+            margin-bottom: 15px;
+        }
+
+        #addonUrl {
+            width: 100%;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #2a2a2a;
+            background: #151515;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        #addonUrl:focus {
+            border-color: #00d4ff;
+            background: #1a1a1a;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>ListLink</h1>
+            <p>Connect your streaming lists</p>
+        </div>
+
+        <div class="card">
+            <h2><span class="step-number">1</span> Authenticate with Trakt</h2>
+            <p>Connect your Trakt.tv account to access your lists and watchlist.</p>
+            <a href="/auth/trakt" class="button">Connect to Trakt</a>
+        </div>
+
+        <div id="authenticated" class="hidden">
+            <div class="card">
+                <h2><span class="step-number">2</span> Select Lists</h2>
+                <p>Choose which lists you want to add content to from Stremio.</p>
+                <div id="lists" class="list-container"></div>
+                <button onclick="generateAddonUrl()" class="button">Generate Add-on URL</button>
+            </div>
+
+            <div id="result" class="hidden">
+                <h3>🎉 Your Add-on URL is Ready!</h3>
+                <p>Copy this URL and add it to Stremio:</p>
+                <input type="text" id="addonUrl" readonly onclick="this.select()">
+            </div>
+        </div>
+    </div>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('access_token')) {
+            handleAuthSuccess(urlParams.get('access_token'), urlParams.get('username'));
+        }
+        function handleAuthSuccess(accessToken, username) {
+            document.getElementById('authenticated').classList.remove('hidden');
+            window.accessToken = accessToken;
+            window.username = username;
+            loadUserLists();
+        }
+        async function loadUserLists() {
+            try {
+                const response = await fetch('/api/user/lists', {
+                    headers: { 'Authorization': 'Bearer ' + window.accessToken }
+                });
+                const lists = await response.json();
+                displayLists(lists);
+            } catch (error) {
+                console.error('Error loading lists:', error);
+            }
+        }
+        function displayLists(lists) {
+            const listsContainer = document.getElementById('lists');
+            listsContainer.innerHTML = `
+                <div class="list-item">
+                    <label><input type="checkbox" value="watchlist" checked> Watchlist</label>
+                </div>
+            `;
+            lists.forEach(list => {
+                listsContainer.innerHTML += `
+                    <div class="list-item">
+                        <label><input type="checkbox" value="${list.ids.slug}"> ${list.name}</label>
+                    </div>
+                `;
+            });
+        }
+        function generateAddonUrl() {
+            const selectedLists = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+                .map(cb => cb.value);
+            const config = {
+                accessToken: window.accessToken,
+                username: window.username,
+                lists: selectedLists
+            };
+            const encodedConfig = btoa(JSON.stringify(config));
+            const addonUrl = `{{BASE_URL}}/${encodedConfig}/manifest.json`;
+            document.getElementById('addonUrl').value = addonUrl;
+            document.getElementById('result').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

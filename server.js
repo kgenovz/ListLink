@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 require('dotenv').config();
 
 // Configuration
@@ -87,130 +89,23 @@ const addItemToList = async (accessToken, listSlug, type, imdbId) => {
     return response.data;
 };
 
-// HTML Templates
-const getConfigurePage = () => `
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Configure ListLink</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
-        .step { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
-        .button { background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; }
-        .list-item { margin: 5px 0; }
-        #result { background: #f8f9fa; padding: 15px; border-radius: 5px; margin-top: 20px; }
-    </style>
-</head>
-<body>
-    <h1>Configure ListLink</h1>
-    <div class="step">
-        <h2>Step 1: Authenticate with Trakt</h2>
-        <p>Click the button below to authenticate with your Trakt.tv account:</p>
-        <a href="/auth/trakt" class="button">Connect to Trakt</a>
-    </div>
-    <div id="authenticated" style="display: none;">
-        <div class="step">
-            <h2>Step 2: Select Lists</h2>
-            <p>Choose which lists you want to add content to:</p>
-            <div id="lists"></div>
-            <button onclick="generateAddonUrl()" class="button">Generate Add-on URL</button>
-        </div>
-        <div id="result" style="display: none;">
-            <h3>Your Add-on URL:</h3>
-            <p>Copy this URL and add it to Stremio:</p>
-            <input type="text" id="addonUrl" readonly style="width: 100%; padding: 10px;">
-        </div>
-    </div>
-    <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('access_token')) {
-            handleAuthSuccess(urlParams.get('access_token'), urlParams.get('username'));
-        }
-        function handleAuthSuccess(accessToken, username) {
-            document.getElementById('authenticated').style.display = 'block';
-            window.accessToken = accessToken;
-            window.username = username;
-            loadUserLists();
-        }
-        async function loadUserLists() {
-            try {
-                const response = await fetch('/api/user/lists', {
-                    headers: { 'Authorization': 'Bearer ' + window.accessToken }
-                });
-                const lists = await response.json();
-                displayLists(lists);
-            } catch (error) {
-                console.error('Error loading lists:', error);
-            }
-        }
-        function displayLists(lists) {
-            const listsContainer = document.getElementById('lists');
-            listsContainer.innerHTML = \`
-                <div class="list-item">
-                    <label><input type="checkbox" value="watchlist" checked> Watchlist</label>
-                </div>
-            \`;
-            lists.forEach(list => {
-                listsContainer.innerHTML += \`
-                    <div class="list-item">
-                        <label><input type="checkbox" value="\${list.ids.slug}"> \${list.name}</label>
-                    </div>
-                \`;
-            });
-        }
-        function generateAddonUrl() {
-            const selectedLists = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
-                .map(cb => cb.value);
-            const config = {
-                accessToken: window.accessToken,
-                username: window.username,
-                lists: selectedLists
-            };
-            const encodedConfig = btoa(JSON.stringify(config));
-            const addonUrl = \`${BASE_URL}/\${encodedConfig}/manifest.json\`;
-            document.getElementById('addonUrl').value = addonUrl;
-            document.getElementById('result').style.display = 'block';
-        }
-    </script>
-</body>
-</html>
-`;
+// HTML Template Loaders
+const loadTemplate = (filename) => {
+    return fs.readFileSync(path.join(__dirname, 'views', filename), 'utf8');
+};
 
-const getSuccessPage = (listSlug) => `
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Added to Trakt</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-        .success { color: green; font-size: 24px; margin: 20px 0; }
-    </style>
-</head>
-<body>
-    <h1>Success!</h1>
-    <div class="success">✓ Item added to ${listSlug === 'watchlist' ? 'Watchlist' : listSlug}</div>
-    <p>You can close this window and return to Stremio.</p>
-</body>
-</html>
-`;
+const getConfigurePage = () => {
+    return loadTemplate('configure.html').replace('{{BASE_URL}}', BASE_URL);
+};
 
-const getErrorPage = () => `
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Error</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-        .error { color: red; font-size: 24px; margin: 20px 0; }
-    </style>
-</head>
-<body>
-    <h1>Error</h1>
-    <div class="error">✗ Failed to add item to list</div>
-    <p>Please try again later.</p>
-</body>
-</html>
-`;
+const getSuccessPage = (listSlug) => {
+    const displayName = listSlug === 'watchlist' ? 'Watchlist' : listSlug;
+    return loadTemplate('success.html').replace('{{LIST_SLUG}}', displayName);
+};
+
+const getErrorPage = () => {
+    return loadTemplate('error.html');
+};
 
 // Initialize Express
 const app = express();
