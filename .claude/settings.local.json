@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "WebSearch"
+      "WebSearch",
+      "Bash(curl -X POST \"https://api.mdblist.com/watchlist/items?action=add&apikey=jjmz4crmthflkevgbqhjhjdox\" -H \"Content-Type: application/json\" -d '{\"\"movies\"\":[{\"\"imdb\"\":\"\"tt0111161\"\"}]}')"
     ],
     "deny": [],
     "ask": []
