@@ -308,7 +308,7 @@ app.get('/:config/add/:type/:id/:listSlug', async (req, res) => {
     }
 
     const { type, id, listSlug } = req.params;
-    const imdbId = id.replace('tt', '');
+    const imdbId = id; // Keep the full IMDB ID including 'tt' prefix
 
     try {
         await addItemToList(config.accessToken, listSlug, type, imdbId);
