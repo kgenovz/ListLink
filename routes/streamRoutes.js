@@ -22,7 +22,7 @@ const setupStreamRoutes = (baseUrl) => {
                     ? (list === 'watchlist' ? 'Watchlist' : list)
                     : list.name;
                 const source = typeof list === 'string' ? 'trakt' : list.source;
-                const prefix = source === 'mdblist' ? '[MDBList] ' : '';
+                const prefix = source === 'mdblist' ? '[MDBList] ' : '[Trakt] ';
 
                 return {
                     title: `Add to ${prefix}${listName}`,

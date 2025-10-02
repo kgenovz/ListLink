@@ -13,7 +13,7 @@ const addItemToMDBListWatchlist = async (apiKey, imdbId, mediatype) => {
         : { shows: [{ imdb: imdbId }] };
 
     const response = await axios.post(
-        `${MDBLIST_API_BASE}/watchlist/items/action?apikey=${apiKey}&action=add`,
+        `${MDBLIST_API_BASE}/watchlist/items/action?action=add&apikey=${apiKey}`,
         payload,
         {
             headers: { 'Content-Type': 'application/json' }
@@ -28,7 +28,7 @@ const addItemToMDBList = async (apiKey, listId, imdbId, mediatype) => {
         : { shows: [{ imdb: imdbId }] };
 
     const response = await axios.post(
-        `${MDBLIST_API_BASE}/lists/${listId}/items/action?apikey=${apiKey}&action=add`,
+        `${MDBLIST_API_BASE}/lists/${listId}/items/action?action=add&apikey=${apiKey}`,
         payload,
         {
             headers: { 'Content-Type': 'application/json' }
